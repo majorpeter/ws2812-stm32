@@ -6,6 +6,7 @@
  */
 
 #include "LedStripController.h"
+#include "Color.h"
 
 volatile bool dmaBusy = false;
 
@@ -22,10 +23,17 @@ void LedStripController::init() {
 	this->gpioInit();
 }
 
-void LedStripController::writeLeds() {
+void LedStripController::writeLeds(const Color* colors, uint16_t ledCount) {
 	while (dmaBusy);
 
 	dmaBusy = true;
+	if (ledCount > maxLedCount) {
+		ledCount = maxLedCount;
+	}
+
+	for (uint16_t i = 0; i < ledCount; i++) {
+		this->colorToBitMask(colors[i], &ledBits[i * 24]);
+	}
 
 	// clear all relevant DMA flags
 	DMA_ClearFlag(DMA1_FLAG_TC2 | DMA1_FLAG_HT2 | DMA1_FLAG_GL2 | DMA1_FLAG_TE2);
@@ -33,9 +41,9 @@ void LedStripController::writeLeds() {
 	DMA_ClearFlag(DMA1_FLAG_HT7 | DMA1_FLAG_GL7 | DMA1_FLAG_TE7);
 
 	// configure the number of bytes to be transferred by the DMA controller
-	DMA_SetCurrDataCounter(DMA1_Channel2, 60 * 24);
-	DMA_SetCurrDataCounter(DMA1_Channel5, 60 * 24);
-	DMA_SetCurrDataCounter(DMA1_Channel7, 60 * 24);
+	DMA_SetCurrDataCounter(DMA1_Channel2, ledCount * 24);
+	DMA_SetCurrDataCounter(DMA1_Channel5, ledCount * 24);
+	DMA_SetCurrDataCounter(DMA1_Channel7, ledCount * 24);
 
 	// clear all TIM2 flags
 	TIM2->SR = 0;
@@ -84,9 +92,9 @@ void LedStripController::dmaInit() {
 
 	// TIM2 CC1 event
 	// DMA1 Channel5
-	/*DMA_DeInit(DMA1_Channel5);
+	DMA_DeInit(DMA1_Channel5);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = reinterpret_cast<uint32_t>(&dataOutGpioPort->BRR);
-	DMA_InitStructure.DMA_MemoryBaseAddr = reinterpret_cast<uint32_t>(&bitSetResetReg);	//TODO use actual data
+	DMA_InitStructure.DMA_MemoryBaseAddr = reinterpret_cast<uint32_t>(this->ledBits);
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
 	DMA_InitStructure.DMA_BufferSize = 1;
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -96,7 +104,7 @@ void LedStripController::dmaInit() {
 	DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
 	DMA_InitStructure.DMA_Priority = DMA_Priority_High;
 	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-	DMA_Init(DMA1_Channel5, &DMA_InitStructure);*/
+	DMA_Init(DMA1_Channel5, &DMA_InitStructure);
 
 	// TIM2 CC2 event
 	// DMA1 Channel7
@@ -155,6 +163,26 @@ void LedStripController::gpioInit() {
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
 	GPIO_Init((GPIO_TypeDef*) dataOutGpioPort, &GPIO_InitStruct);
+}
+
+// G7 G6 G5 G4 G3 G2 G1 G0 R7 R6 R5 R4 R3 R2 R1 R0 B7 B6 B5 B4 B3 B2 B1 B0
+void LedStripController::colorToBitMask(const Color color, uint16_t* maskBase) {
+	this->byteToBitMask(color.getGreen(), maskBase);
+	this->byteToBitMask(color.getRed(), maskBase + 8);
+	this->byteToBitMask(color.getBlue(), maskBase + 16);
+}
+
+void LedStripController::byteToBitMask(uint8_t byte, uint16_t* maskBase) {
+	uint8_t mask = 0x80;
+	while (mask != 0) {
+		if ((mask & byte) != 0x00) {
+			*maskBase = 0;
+		} else {
+			*maskBase = dataOutGpioPin;
+		}
+		maskBase++;
+		mask >>= 1;
+	}
 }
 
 extern "C"
