@@ -7,6 +7,10 @@
 
 #include "Color.h"
 
+Color::Color() {
+	color.value = 0;
+}
+
 Color::Color(uint8_t red, uint8_t green, uint8_t blue) {
 	color.components.r = red;
 	color.components.g = green;
