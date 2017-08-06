@@ -11,8 +11,9 @@
 volatile bool dmaBusy = false;
 
 LedStripController::LedStripController(GPIO_TypeDef const* dataOutGpioPort,
-		uint16_t dataOutGpioPin) :
-		dataOutGpioPort(dataOutGpioPort), dataOutGpioPin(dataOutGpioPin) {
+		uint16_t dataOutGpioPin, uint16_t ledIndexOffset, bool reverse) :
+		dataOutGpioPort(dataOutGpioPort), dataOutGpioPin(dataOutGpioPin),
+		ledIndexOffset(ledIndexOffset), reverse(reverse) {
 	bitSetResetReg = dataOutGpioPin;
 }
 
@@ -31,8 +32,18 @@ void LedStripController::writeLeds(const Color* colors, uint16_t ledCount) {
 		ledCount = maxLedCount;
 	}
 
-	for (uint16_t i = 0; i < ledCount; i++) {
-		this->colorToBitMask(colors[i], &ledBits[i * 24]);
+	for (uint16_t inputDataIndex = 0; inputDataIndex < maxLedCount; inputDataIndex++) {
+		int16_t outputDataIndex = ledIndexOffset + (reverse ? -inputDataIndex : inputDataIndex);
+		if (outputDataIndex >= maxLedCount) {
+			outputDataIndex -= maxLedCount;
+		} else if (outputDataIndex < 0) {
+			outputDataIndex += maxLedCount;
+		}
+		if (inputDataIndex < ledCount) {
+			this->colorToBitMask(colors[inputDataIndex], &ledBits[outputDataIndex * 24]);
+		} else {
+			this->colorToBitMask(Color(0,0,0), &ledBits[outputDataIndex * 24]);
+		}
 	}
 
 	// clear all relevant DMA flags
@@ -41,9 +52,9 @@ void LedStripController::writeLeds(const Color* colors, uint16_t ledCount) {
 	DMA_ClearFlag(DMA1_FLAG_HT7 | DMA1_FLAG_GL7 | DMA1_FLAG_TE7);
 
 	// configure the number of bytes to be transferred by the DMA controller
-	DMA_SetCurrDataCounter(DMA1_Channel2, ledCount * 24);
-	DMA_SetCurrDataCounter(DMA1_Channel5, ledCount * 24);
-	DMA_SetCurrDataCounter(DMA1_Channel7, ledCount * 24);
+	DMA_SetCurrDataCounter(DMA1_Channel2, maxLedCount * 24);
+	DMA_SetCurrDataCounter(DMA1_Channel5, maxLedCount * 24);
+	DMA_SetCurrDataCounter(DMA1_Channel7, maxLedCount * 24);
 
 	// clear all TIM2 flags
 	TIM2->SR = 0;

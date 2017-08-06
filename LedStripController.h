@@ -16,12 +16,14 @@ class LedStripController {
 public:
 	static const uint16_t maxLedCount = 60;
 
-	LedStripController(GPIO_TypeDef const* dataOutGpioPort, uint16_t dataOutGpioPin);
+	LedStripController(GPIO_TypeDef const* dataOutGpioPort, uint16_t dataOutGpioPin, uint16_t ledIndexOffset, bool reverse);
 	void init();
 	void writeLeds(const Color* colors, uint16_t ledCount);
 private:
 	GPIO_TypeDef const* dataOutGpioPort;
 	uint16_t dataOutGpioPin;
+	uint16_t ledIndexOffset;
+	bool reverse;
 	/// the value that can be written to the GPIO port's BSRR or BRR (DMA transfer destination)
 	uint32_t bitSetResetReg;
 	/// each element of this array represents one bit of the DMA transfer and is transmitted to the port's BRR
