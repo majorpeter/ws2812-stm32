@@ -172,7 +172,7 @@ void LedStripController::gpioInit() {
 	GPIO_InitTypeDef GPIO_InitStruct;
 	GPIO_InitStruct.GPIO_Pin = dataOutGpioPin;
 	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init((GPIO_TypeDef*) dataOutGpioPort, &GPIO_InitStruct);
 }
 
