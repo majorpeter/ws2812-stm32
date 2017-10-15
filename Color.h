@@ -31,6 +31,9 @@ public:
 		color.value = c.color.value;
 		return *this;
 	}
+	inline bool operator==(const Color& c) const {
+		return (color.value & 0xffffff) == (c.color.value & 0xffffff);
+	}
 	inline uint8_t getRed() const {
 		return color.components.red;
 	}
