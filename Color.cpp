@@ -8,6 +8,7 @@
 #include "Color.h"
 
 const Color Color::black(0, 0, 0);
+const Color Color::white(maxChannelValue, maxChannelValue, maxChannelValue);
 const Color Color::red(maxChannelValue, 0, 0);
 const Color Color::green(0, maxChannelValue, 0);
 const Color Color::blue(0, 0, maxChannelValue);
