@@ -12,6 +12,8 @@
 
 class Color {
 public:
+	static const uint8_t maxChannelValue = 255;
+
 	static const Color black;
 	static const Color red;
 	static const Color green;
@@ -22,26 +24,28 @@ public:
 	Color(const Color& c);
 	~Color() {}
 
+	Color& operator+=(const Color& c);
+
 	inline Color& operator=(const Color& c) {
 		color.value = c.color.value;
 		return *this;
 	}
 	inline uint8_t getRed() const {
-		return color.components.r;
+		return color.components.red;
 	}
 	inline uint8_t getGreen() const {
-		return color.components.g;
+		return color.components.green;
 	}
 	inline uint8_t getBlue() const {
-		return color.components.b;
+		return color.components.blue;
 	}
 private:
 	union color_ {
 		uint32_t value;
 		struct {
-			uint8_t b;
-			uint8_t g;
-			uint8_t r;
+			uint8_t blue;
+			uint8_t green;
+			uint8_t red;
 			uint8_t _reserved;
 		} components;
 	} color;
