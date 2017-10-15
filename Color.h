@@ -12,10 +12,20 @@
 
 class Color {
 public:
+	static const Color black;
+	static const Color red;
+	static const Color green;
+	static const Color blue;
+
 	Color();
 	Color(uint8_t red, uint8_t green, uint8_t blue);
 	Color(const Color& c);
+	~Color() {}
 
+	inline Color& operator=(const Color& c) {
+		color.value = c.color.value;
+		return *this;
+	}
 	inline uint8_t getRed() const {
 		return color.components.r;
 	}
