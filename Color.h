@@ -25,6 +25,7 @@ public:
 	~Color() {}
 
 	Color& operator+=(const Color& c);
+	Color operator*(float v) const;
 
 	inline Color& operator=(const Color& c) {
 		color.value = c.color.value;

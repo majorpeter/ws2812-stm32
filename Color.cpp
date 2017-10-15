@@ -41,3 +41,17 @@ Color& Color::operator+=(const Color& c) {
 
 	return *this;
 }
+
+/**
+ * scalar multiply operator
+ * @param v floating point multiplier [0, 1.0]
+ * @return this color after multiplication
+ */
+Color Color::operator*(float v) const {
+	Color c;
+	c.color.components.red = color.components.red * v;
+	c.color.components.green = color.components.green * v;
+	c.color.components.blue = color.components.blue * v;
+
+	return c;
+}
