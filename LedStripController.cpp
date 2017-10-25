@@ -10,7 +10,7 @@
 
 volatile bool dmaBusy = false;
 
-LedStripController::LedStripController(GPIO_TypeDef const* dataOutGpioPort,
+LedStripController::LedStripController(GPIO_TypeDef * const dataOutGpioPort,
         uint16_t dataOutGpioPin, uint16_t ledIndexOffset, bool reverse) :
         dataOutGpioPort(dataOutGpioPort), dataOutGpioPin(dataOutGpioPin),
         ledIndexOffset(ledIndexOffset), reverse(reverse) {

@@ -16,7 +16,7 @@ class LedStripController {
 public:
     static const uint16_t maxLedCount = 60;
 
-    LedStripController(GPIO_TypeDef const* dataOutGpioPort, uint16_t dataOutGpioPin, uint16_t ledIndexOffset, bool reverse);
+    LedStripController(GPIO_TypeDef * const dataOutGpioPort, uint16_t dataOutGpioPin, uint16_t ledIndexOffset, bool reverse);
     void init();
     void writeLeds(const Color* colors, uint16_t ledCount);
 private:
