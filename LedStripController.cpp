@@ -11,10 +11,16 @@
 volatile bool dmaBusy = false;
 
 LedStripController::LedStripController(GPIO_TypeDef * const dataOutGpioPort,
-        uint16_t dataOutGpioPin, uint16_t ledIndexOffset, bool reverse) :
-        dataOutGpioPort(dataOutGpioPort), dataOutGpioPin(dataOutGpioPin),
+        uint16_t dataOutGpioPin, uint16_t maxLedCount, uint16_t ledIndexOffset,
+        bool reverse) :
+        dataOutGpioPort(dataOutGpioPort), dataOutGpioPin(dataOutGpioPin), maxLedCount(maxLedCount),
         ledIndexOffset(ledIndexOffset), reverse(reverse) {
+    ledBits = new uint16_t[maxLedCount * 24];
     bitSetResetReg = dataOutGpioPin;
+}
+
+LedStripController::~LedStripController() {
+    delete[] ledBits;
 }
 
 void LedStripController::init() {
