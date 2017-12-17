@@ -21,6 +21,10 @@ public:
 
     void init();
     void writeLeds(const Color* colors, uint16_t ledCount);
+
+    inline uint16_t getLedCount() const {
+        return maxLedCount;
+    }
 private:
     GPIO_TypeDef const* dataOutGpioPort;
     uint16_t dataOutGpioPin;
