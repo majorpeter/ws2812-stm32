@@ -7,19 +7,28 @@
 
 MK_PROP_BINARY_RW(LedStripControllerNode, ColorHex, "Current color in hexadecimal digits");
 MK_PROP_STRING_RW(LedStripControllerNode, ColorRgb, "Current color as RGB decimal values");
+const Property_t LedStripControllerNode::prop_ColorBytes = {
+    "ColorBytes", "Current color values for each LED.",
+    PropertyType_BinarySegmented, PropAccessLevel_ReadWrite,
+    (void*) &LedStripControllerNode::getColorBytes,
+    &((LedStripControllerNode*)NULL)->setColorBytes,
+    ((size_t)(Node*)(LedStripControllerNode*) 1) - 1
+};
 MK_PROP_METHOD(LedStripControllerNode, clear, "Disable all LED's");
 
 PROP_ARRAY(props) = {
         PROP_ADDRESS(LedStripControllerNode, ColorHex),
         PROP_ADDRESS(LedStripControllerNode, ColorRgb),
+        PROP_ADDRESS(LedStripControllerNode, ColorBytes),
         PROP_ADDRESS(LedStripControllerNode, clear)
 };
 
-LedStripControllerNode::LedStripControllerNode(LedStripController* controller): Node("LEDSTRIP"), controller(controller) {
+LedStripControllerNode::LedStripControllerNode(LedStripController* controller): Node("LEDSTRIP"), setColorBytes(this), controller(controller) {
     NODE_SET_PROPS(props);
 
     colors = new Color[controller->getLedCount()];
     memset(rgbBytes, 0x00, sizeof(rgbBytes));
+    byteIndex = 0;
 }
 
 ProtocolResult_t LedStripControllerNode::getColorHex(const void** dest, uint16_t* length) const {
@@ -44,6 +53,7 @@ ProtocolResult_t LedStripControllerNode::setColorHex(const void* value, uint16_t
     controller->writeLeds(colors, controller->getLedCount());
 
     invalidateProperty(&prop_ColorRgb);
+    invalidateProperty(&prop_ColorBytes);
     return ProtocolResult_Ok;
 }
 
@@ -68,7 +78,76 @@ ProtocolResult_t LedStripControllerNode::setColorRgb(const char* value) {
     controller->writeLeds(colors, controller->getLedCount());
 
     invalidateProperty(&prop_ColorHex);
+    invalidateProperty(&prop_ColorBytes);
     return ProtocolResult_Ok;
+}
+
+ProtocolResult_t LedStripControllerNode::getColorBytes(AbstractPacketInterface *packetInterface) {
+    if (!packetInterface->startTransaction()) {
+        return ProtocolResult_InternalError;
+    }
+
+    // bytes by 3
+    uint8_t buffer[3];
+    for (uint16_t i = 0; i < controller->getLedCount(); i++) {
+        buffer[0] = colors[i].getRed();
+        buffer[1] = colors[i].getGreen();
+        buffer[2] = colors[i].getBlue();
+        bool result = packetInterface->transmitData(buffer, 3);
+        if (result == false) {
+            packetInterface->cancelTransaction();
+            return ProtocolResult_InternalError;
+        }
+    }
+
+    if (!packetInterface->commitTransaction()) {
+        packetInterface->cancelTransaction();
+        return ProtocolResult_InternalError;
+    }
+
+    return ProtocolResult_Ok;
+}
+
+bool LedStripControllerNode::SetColorBytes::startTransaction() {
+    that->byteIndex = 0;
+    return true;
+}
+
+bool LedStripControllerNode::SetColorBytes::transmitData(const uint8_t *data, uint16_t length) {
+    uint16_t byteIndexAfter = that->byteIndex + length;
+    if (byteIndexAfter > that->controller->getLedCount() * 3) {
+        return false;
+    }
+
+    while (length > 0) {
+        Color& c = that->colors[that->byteIndex / 3];
+        switch (that->byteIndex % 3) {
+        case 0:
+            c.setRed(*data);
+            break;
+        case 1:
+            c.setGreen(*data);
+            break;
+        case 2:
+            c.setBlue(*data);
+            break;
+        }
+
+        that->byteIndex++;
+        data++;
+
+        length--;
+    }
+
+    return true;
+}
+
+bool LedStripControllerNode::SetColorBytes::commitTransaction() {
+    that->controller->writeLeds(that->colors, that->controller->getLedCount());
+    return true;
+}
+
+void LedStripControllerNode::SetColorBytes::cancelTransaction() {
 }
 
 ProtocolResult_t LedStripControllerNode::invokeclear(const char*) {
