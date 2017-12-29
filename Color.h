@@ -35,6 +35,7 @@ public:
     inline bool operator==(const Color& c) const {
         return (color.value & 0xffffff) == (c.color.value & 0xffffff);
     }
+
     inline uint8_t getRed() const {
         return color.components.red;
     }
@@ -43,6 +44,16 @@ public:
     }
     inline uint8_t getBlue() const {
         return color.components.blue;
+    }
+
+    inline void setRed(uint8_t red) {
+        color.components.red = red;
+    }
+    inline void setGreen(uint8_t green) {
+        color.components.green = green;
+    }
+    inline void setBlue(uint8_t blue) {
+        color.components.blue = blue;
     }
 private:
     union color_ {
