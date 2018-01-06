@@ -99,6 +99,8 @@ bool LedStripControllerNode::SetColorBytes::startTransaction() {
 bool LedStripControllerNode::SetColorBytes::transmitData(const uint8_t *data, uint16_t length) {
     uint16_t byteIndexAfter = that->byteIndex + length;
     if (byteIndexAfter > that->controller->getLedCount() * 3) {
+        // signals that user has tried to put more bytes than necessary
+        that->byteIndex = byteIndexAfter;
         return false;
     }
 
@@ -126,17 +128,27 @@ bool LedStripControllerNode::SetColorBytes::transmitData(const uint8_t *data, ui
 }
 
 bool LedStripControllerNode::SetColorBytes::commitTransaction() {
-    that->controller->writeLeds(that->colors, that->controller->getLedCount());
+    if (that->byteIndex == that->controller->getLedCount() * 3) {
+        // only update LED's if the correct number of bytes were received
+        that->controller->writeLeds(that->colors, that->controller->getLedCount());
+    } else {
+        that->clearColorsBuffer();
+        return false;
+    }
     return true;
 }
 
 void LedStripControllerNode::SetColorBytes::cancelTransaction() {
 }
 
-ProtocolResult_t LedStripControllerNode::invokeclear(const char*) {
+void LedStripControllerNode::clearColorsBuffer() {
     for (uint16_t i = 0; i < controller->getLedCount(); i++) {
         colors[i] = Color::black;
     }
+}
+
+ProtocolResult_t LedStripControllerNode::invokeclear(const char*) {
+    this->clearColorsBuffer();
     controller->writeLeds(colors, controller->getLedCount());
     return ProtocolResult_Ok;
 }

@@ -20,6 +20,8 @@ private:
     Color* colors;
     uint8_t rgbBytes[3];
     uint16_t byteIndex;
+
+    void clearColorsBuffer();
 };
 
 #endif /* LEDSTRIPCONTROLLERNODE_H_ */
