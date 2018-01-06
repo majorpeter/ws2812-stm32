@@ -7,13 +7,7 @@
 
 MK_PROP_BINARY_RW(LedStripControllerNode, ColorHex, "Current color in hexadecimal digits");
 MK_PROP_STRING_RW(LedStripControllerNode, ColorRgb, "Current color as RGB decimal values");
-const Property_t LedStripControllerNode::prop_ColorBytes = {
-    "ColorBytes", "Current color values for each LED.",
-    PropertyType_BinarySegmented, PropAccessLevel_ReadWrite,
-    (void*) &LedStripControllerNode::getColorBytes,
-    &((LedStripControllerNode*)NULL)->setColorBytes,
-    ((size_t)(Node*)(LedStripControllerNode*) 1) - 1
-};
+MK_PROP_BINARY_SEG_RW(LedStripControllerNode, ColorBytes, "Current color values for each LED.");
 MK_PROP_METHOD(LedStripControllerNode, clear, "Disable all LED's");
 
 PROP_ARRAY(props) = {
@@ -82,29 +76,18 @@ ProtocolResult_t LedStripControllerNode::setColorRgb(const char* value) {
     return ProtocolResult_Ok;
 }
 
-ProtocolResult_t LedStripControllerNode::getColorBytes(AbstractPacketInterface *packetInterface) {
-    if (!packetInterface->startTransaction()) {
-        return ProtocolResult_InternalError;
-    }
-
+ProtocolResult_t LedStripControllerNode::getColorBytes(AbstractSerialInterface *serialInterface) {
     // bytes by 3
     uint8_t buffer[3];
     for (uint16_t i = 0; i < controller->getLedCount(); i++) {
         buffer[0] = colors[i].getRed();
         buffer[1] = colors[i].getGreen();
         buffer[2] = colors[i].getBlue();
-        bool result = packetInterface->transmitData(buffer, 3);
+        bool result = serialInterface->writeBytes(buffer, 3);
         if (result == false) {
-            packetInterface->cancelTransaction();
             return ProtocolResult_InternalError;
         }
     }
-
-    if (!packetInterface->commitTransaction()) {
-        packetInterface->cancelTransaction();
-        return ProtocolResult_InternalError;
-    }
-
     return ProtocolResult_Ok;
 }
 
